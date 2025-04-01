@@ -1,61 +1,42 @@
-# GRPO Configuration
-grpo_config = GRPOConfig(
-    output_dir=OUTPUT_DIR,
-    learning_rate=2e-5,                # Higher learning rate for QLoRA
-    per_device_train_batch_size=2,     # Adjust based on GPU memory
-    gradient_accumulation_steps=8,     # Effective batch size of 16 per device
-    max_steps=15000,                   # ~1/4 epoch for 1M examples
-    warmup_steps=1000,                 # Longer warmup for stability
-    logging_steps=100,                 # More frequent logging
-    save_steps=500,                    # Save checkpoints regularly
-    evaluation_strategy="steps",
-    eval_steps=500,
+def load_and_prepare_dataset(path_or_data, train_size=0.95, cache_dir="./dataset_cache"):
+    """
+    Load and prepare dataset with system prompts and user queries
+    """
+    # Load dataset
+    if isinstance(path_or_data, str) and os.path.exists(path_or_data):
+        logger.info(f"Loading dataset from {path_or_data}")
+        df = pd.read_csv(path_or_data)
+    elif isinstance(path_or_data, pd.DataFrame):
+        logger.info("Using provided DataFrame as dataset")
+        df = path_or_data
+    else:
+        logger.warning("No dataset provided. Creating a sample dataset for demonstration...")
+        df = pd.DataFrame({
+            'system_prompt': [
+                "You are a helpful AI assistant that provides accurate and concise information.",
+                "You are an expert in programming who helps solve coding problems efficiently.",
+                "You are a creative writer who creates engaging stories."
+            ] * 10,
+            'user_query': [
+                "What are the main causes of climate change?",
+                "How do I implement a binary search tree in Python?",
+                "Write a short story about a robot discovering emotions."
+            ] * 10
+        })
     
-    # GRPO specific params
-    beta=0.1,                          # KL penalty coefficient
-    num_generations=4,                 # Completions per prompt for efficiency
-    epsilon=0.2,                       # Clipping parameter
-    scale_rewards=False,               # As recommended by Dr. GRPO paper
+    logger.info(f"Dataset size: {len(df)}")
     
-    # Generation params
-    temperature=0.8,                   # Slightly lower for more focused outputs
-    top_p=0.92,                        # Nucleus sampling parameter
-    top_k=50,                          # Top-k filtering
-    max_prompt_length=384,             # Based on typical prompt length
-    max_completion_length=128,         # Reasonable completion length
-    repetition_penalty=1.1,            # Reduce repetition
+    # Convert to HF dataset
+    dataset = Dataset.from_pandas(df)
     
-    # Optimization params
-    gradient_checkpointing=True,       # Memory optimization
-    fp16=True,                         # Mixed precision
-    optim="adamw_torch",               # Optimizer
-    weight_decay=0.01,                 # L2 regularization
-    max_grad_norm=1.0,                 # Gradient clipping
-    lr_scheduler_type="cosine",        # LR scheduler
+    # Split into train and validation sets
+    splits = dataset.train_test_split(test_size=1-train_size, seed=42)
+    train_dataset = splits["train"]
+    eval_dataset = splits["test"]
     
-    # Prevent overfitting
-    no_cuda=False,
-    seed=42,
-    local_rank=-1,
+    logger.info(f"Train set size: {len(train_dataset)}, Validation set size: {len(eval_dataset)}")
     
-    # Reporting & Logging
-    report_to="tensorboard",
-    log_level="info",
-    disable_tqdm=False,
-    remove_unused_columns=False,       # Important for custom datasets
-    log_completions=True,
-    
-    # Model saving
-    save_total_limit=3,                # Keep only the last 3 checkpoints
-)
+    return train_dataset, eval_dataset
 
 
-# Initialize the GRPO trainer
-trainer = GRPOTrainer(
-    model=model,
-    reward_funcs=reward_model.batch_evaluate,  # Use our GPT-4o reward model
-    args=grpo_config,
-    train_dataset=train_dataset,
-    eval_dataset=eval_dataset,
-    processing_class=tokenizer,
-)
+    train_dataset, eval_dataset = load_and_prepare_dataset("your_dataset_path.csv") 
