@@ -8,7 +8,7 @@
 #   --tensor-parallel-size 3
 
 # CUDA_VISIBLE_DEVICES=3 python train_grpo.py 
-
+## pip install torch>=2.0.0 transformers>=4.37.0 trl>=0.7.5 peft>=0.7.0 accelerate>=0.24.0 bitsandbytes>=0.41.0 datasets>=2.14.0 vllm>=0.3.0 openai>=1.6.0 pandas>=2.0.0 numpy>=1.24.0 tensorboard>=2.13.0 tqdm>=4.66.0 scikit-learn>=1.3.0 wandb>=0.15.0
 import os
 import torch
 import pandas as pd
