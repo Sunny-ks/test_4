@@ -1,0 +1,95 @@
+# Full moderation prompt as plain text without any table formatting
+complete_prompt_plain_text = """
+✅ Moderation Prompt: Detecting Spam & Advertisement in the Xbox Gaming Community
+
+Use this guide to consistently identify content that qualifies as spam or advertisement, while distinguishing it from genuine community engagement.
+
+📌 Definition
+
+Spam and Advertisement refer to unsolicited or irrelevant content that aims to promote products, services, social media accounts, or external links—rather than contributing to authentic gaming discussion.
+
+This includes both direct promotions and indirect self-promotion that disrupts the community’s experience.
+
+🧩 Main Concepts (With Examples)
+
+1. Commercial Intent
+Content created primarily to drive revenue, subscriptions, traffic, or followers—often unrelated to genuine discussion. This includes direct sales, affiliate links, paid services, and monetized content promotion.
+- Example: “Get the best gaming chair for 30% off at ProGamerChairs.com!”
+- Example: “Use my promo code STREAMER50 for discounts on all gaming gear!”
+
+2. Repetition and Disruption
+Posting the same or similar promotional messages across multiple threads, channels, or time periods, especially if off-topic or intrusive to active conversations.
+- Example: Posting the same “Check out my stream at twitch.tv/streamername!” in multiple threads within an hour.
+- Example: Copy-pasting promotional content in different unrelated game channels.
+
+3. Deceptive or Clickbait Practices
+Content that misleads users into engaging, including fake giveaways, exaggerated claims, and attention-grabbing messages that don’t deliver value.
+- Example: “Click here for a free Xbox Series X! No catch!” (leads to scam site)
+- Example: “100% working method to get free game coins – limited time!”
+
+4. Excessive Self-Promotion
+Sharing personal content—such as Twitch streams, YouTube channels, or Discord servers—without meaningful participation or contribution to community discussions.
+- Example: “New gameplay video on my channel – subscribe now!” (with no other interaction)
+- Example: User only posts links to their own content without engaging in any discussions.
+
+5. Irrelevant Link Dumping
+Posting links to videos, products, websites, or social media accounts with little to no context, especially if not related to the conversation or thread.
+- Example: Dropping a YouTube link in a post about a bug report with no context.
+- Example: Sharing a personal website in a strategy thread unrelated to the topic.
+
+6. Unsolicited Direct Messaging
+Sending promotional messages or links directly to users via DM, especially for the purpose of selling services, asking for subscriptions, or promoting third-party platforms.
+- Example: “Hey! Want to grow your Twitch followers fast? DM me.”
+- Example: Sending links to personal content to random users via private messages.
+
+7. Affiliate or Referral Schemes
+Sharing referral codes, affiliate links, or pyramid-style promotional content disguised as advice or recommendations.
+- Example: “Join this game using my referral code ABC123 to get bonuses!”
+- Example: “Earn cash by referring others to this game platform. Sign up through my link!”
+
+8. Mass Tagging or Mentioning
+Tagging multiple users or using @everyone/@here in a way that promotes personal or commercial content, particularly when it's not event-related or community-driven.
+- Example: “@everyone join my live stream now!” (in non-event or unrelated contexts)
+- Example: Tagging 10+ users to promote your YouTube video.
+
+9. Fake Engagement Requests
+Asking users to like, follow, share, or subscribe in exchange for perks, shoutouts, or giveaways—especially when not related to a broader community effort.
+- Example: “Like and share this post to win free V-Bucks!”
+- Example: “First 10 followers get a special shoutout!”
+
+10. Off-Topic Advertisements
+Promoting unrelated services, products, or content (e.g., crypto schemes, unrelated merch, non-gaming YouTube channels) in gaming discussions.
+- Example: “Buy crypto and win gaming loot – link in bio!”
+- Example: “Check out my eCommerce store – now selling gaming hoodies!”
+
+✅ Exclusions (Allowed Content)
+
+These types of content are not considered spam or advertisement and should generally be allowed:
+
+- Discussions about in-game currency, items, or rewards within the context of gameplay
+  Example: “Anyone grinding gold for the weekend quest?”
+
+- Requests for team-ups, co-op partners, or tournament squads
+  Example: “Need 2 more players for Ranked – anyone available?”
+
+- Sharing personal accomplishments or gameplay highlights
+  Example: “Just hit Diamond rank in Halo – what a grind!”
+
+- Asking for gameplay help, bug fixes, or performance advice
+  Example: “Anyone else getting FPS drops after the last update?”
+
+- Event announcements without monetization
+  Example: “Hosting a free-for-all tournament this weekend – everyone welcome!”
+
+- Limited and contextual self-promotion, when it adds value to an ongoing discussion
+  Example: “I made a short video explaining how to beat this boss – hope it helps!”
+
+Let’s keep the Xbox community respectful, relevant, and spam-free!
+"""
+
+# Save to .txt file
+final_file_path = "/mnt/data/Xbox_Spam_Ad_Moderation_Complete.txt"
+with open(final_file_path, "w") as file:
+    file.write(complete_prompt_plain_text)
+
+final_file_path
