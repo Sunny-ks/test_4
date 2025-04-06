@@ -1,3 +1,5 @@
+### pip install dspy-ai==2.3.0
+
 import dspy
 import re
 import torch
