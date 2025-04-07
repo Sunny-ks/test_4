@@ -1,3 +1,12 @@
+CUDA_VISIBLE_DEVICES=0 python -m vllm.entrypoints.openai.api_server \
+  --model mosaicml/mpt-7b \
+  --port 8000 \
+  --max-model-len 122888 \
+  --max-num-seqs 8 \
+  --enable-prefix-caching
+
+
+
 import dspy
 import re
 import torch
