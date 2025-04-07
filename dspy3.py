@@ -1,28 +1,25 @@
 import dspy
 
-# === 1. Initialization ===
-# Set your vLLM server model endpoint details
-model_name = "hosted_vllm/deepseek-ai/deepseek-llm-7b-chat"  # Can be anything, but used for tracking
-api_base_url = "http://localhost:8000/v1/"  # Must match your vLLM server
+# Specify the model name from the Hugging Face Hub
+model_name = "your-fine-tuned-model-name"  # Replace with your model's name
 
-# Initialize the DSPy-compatible LM client using vLLM
-vllm_model = dspy.LM(
-    model=model_name,
-    api_base=api_base_url,
-    provider=dspy.LocalProvider(),  # Local/OpenAI-compatible API (like vLLM)
-    temperature=0.7,
-    max_tokens=100,
-    cache=False  # Set to True if you want caching for repeated queries
-)
+# Initialize the language model with the specified provider
+lm = dspy.LM(model=model_name, provider="huggingface", device_map="auto")
 
-# Set this model as the global default for DSPy
-dspy.configure(lm=vllm_model)
+# Configure DSPy to use the initialized language model
+dspy.configure(lm=lm)# Define a simple question-answering module
 
-# === 2. Define a simple QA task ===
-qa_module = dspy.ChainOfThought("question -> answer")
 
-# === 3. Run a test question ===
+class SimpleQA(dspy.Signature):
+    """A simple question-answering model."""
+    question = dspy.InputField()
+    answer = dspy.OutputField()
+
+qa_module = dspy.ChainOfThought(SimpleQA)
+
+# Test the module with a sample question
 response = qa_module(question="What is the capital of France?")
+print(response.answer)
 
-# === 4. Show result ===
-print("Response:", response.answer)
+
+
