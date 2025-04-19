@@ -1,0 +1,208 @@
+import os
+import numpy as np
+import torch
+from torch.utils.data import Dataset
+from datasets import load_metric
+from transformers import (
+    AutoFeatureExtractor,
+    AutoModelForImageClassification,
+    TrainingArguments,
+    Trainer,
+)
+from PIL import Image
+import torchvision.transforms as transforms
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+
+# Define paths
+dataset_dir = "dataset"  # Main dataset directory
+output_dir = "finetune_output"  # Directory to save the fine-tuned model
+
+# Class mapping for our three classes
+id2label = {0: "harm", 1: "safe", 2: "text_image"}
+label2id = {"harm": 0, "safe": 1, "text_image": 2}
+
+# Define custom dataset
+class ImageClassificationDataset(Dataset):
+    def __init__(self, root_dir, feature_extractor, transform=None):
+        self.root_dir = root_dir
+        self.feature_extractor = feature_extractor
+        self.transform = transform
+        
+        # The actual folder names in the dataset
+        self.folder_to_class = {
+            "safe": "safe",
+            "memes": "text_image",
+            # All harmful content folders
+            "alcohol": "harm",
+            "credit_card": "harm", 
+            "credit_card_images": "harm",
+            "drug-name": "harm",
+            "gore": "harm",
+            "hate": "harm",
+            "middle_finger": "harm",
+            "porn": "harm",
+            "self_harm": "harm",
+            "selfie": "harm",
+            "violence": "harm",
+            "weapons": "harm"
+            # Any other folders will be assigned to "harm" as fallback
+        }
+        
+        self.classes = ["harm", "safe", "text_image"]
+        self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
+        
+        self.samples = []
+        # Get all subdirectories in the dataset folder
+        subdirs = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
+        
+        for subdir in subdirs:
+            # Determine the class for this folder
+            if subdir in self.folder_to_class:
+                class_name = self.folder_to_class[subdir]
+            else:
+                # All other folders are considered "harm"
+                class_name = "harm"
+                
+            class_dir = os.path.join(root_dir, subdir)
+            class_idx = self.class_to_idx[class_name]
+            
+            for filename in os.listdir(class_dir):
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    self.samples.append((os.path.join(class_dir, filename), class_idx))
+                    
+        print(f"Loaded dataset with {len(self.samples)} images")
+        # Print distribution of classes
+        class_counts = {}
+        for _, label_idx in self.samples:
+            label = id2label[label_idx]
+            if label in class_counts:
+                class_counts[label] += 1
+            else:
+                class_counts[label] = 1
+        
+        print(f"Class distribution: {class_counts}")
+    
+    def __len__(self):
+        return len(self.samples)
+    
+    def __getitem__(self, idx):
+        img_path, label = self.samples[idx]
+        image = Image.open(img_path).convert('RGB')
+        
+        if self.transform:
+            image = self.transform(image)
+        
+        # Apply feature extractor
+        pixel_values = self.feature_extractor(images=image, return_tensors="pt").pixel_values
+        
+        return {
+            "pixel_values": pixel_values.squeeze(),
+            "labels": torch.tensor(label)
+        }
+
+# Compute metrics function for evaluation
+def compute_metrics(eval_preds):
+    logits, labels = eval_preds
+    predictions = np.argmax(logits, axis=1)
+    
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels, predictions, average='weighted')
+    acc = accuracy_score(labels, predictions)
+    
+    return {
+        'accuracy': acc,
+        'f1': f1,
+        'precision': precision,
+        'recall': recall
+    }
+
+# Data augmentation and preprocessing
+train_transforms = transforms.Compose([
+    transforms.RandomResizedCrop(224),
+    transforms.RandomHorizontalFlip(),
+    transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+val_transforms = transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+def main():
+    # Load feature extractor and model
+    model_name = "microsoft/resnet-101"
+    feature_extractor = AutoFeatureExtractor.from_pretrained(model_name)
+    
+    # Create model with our number of classes
+    model = AutoModelForImageClassification.from_pretrained(
+        model_name,
+        num_labels=len(id2label),
+        id2label=id2label,
+        label2id=label2id,
+        ignore_mismatched_sizes=True  # Needed when changing classification head
+    )
+    
+    # Split dataset into train and validation (80/20)
+    dataset = ImageClassificationDataset(dataset_dir, feature_extractor)
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    np.random.shuffle(indices)
+    
+    train_idx = indices[:int(0.8 * dataset_size)]
+    val_idx = indices[int(0.8 * dataset_size):]
+    
+    # Apply different transforms for train and validation
+    train_dataset = ImageClassificationDataset(dataset_dir, feature_extractor, train_transforms)
+    val_dataset = ImageClassificationDataset(dataset_dir, feature_extractor, val_transforms)
+    
+    # Subset datasets
+    train_dataset.samples = [train_dataset.samples[i] for i in train_idx]
+    val_dataset.samples = [val_dataset.samples[i] for i in val_idx]
+    
+    print(f"Training on {len(train_dataset)} samples, validating on {len(val_dataset)} samples")
+    
+    # Define training arguments
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        num_train_epochs=10,
+        learning_rate=5e-5,
+        load_best_model_at_end=True,
+        metric_for_best_model="accuracy",
+        logging_dir=os.path.join(output_dir, "logs"),
+        logging_steps=10,
+        weight_decay=0.01,
+        save_total_limit=3,
+        fp16=True,  # Use mixed precision training
+    )
+    
+    # Create Trainer
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset,
+        compute_metrics=compute_metrics,
+    )
+    
+    # Start training
+    print("Starting fine-tuning...")
+    trainer.train()
+    
+    # Save final model
+    trainer.save_model(os.path.join(output_dir, "final_model"))
+    print(f"Model saved to {os.path.join(output_dir, 'final_model')}")
+    
+    # Evaluate
+    eval_results = trainer.evaluate()
+    print(f"Evaluation results: {eval_results}")
+
+if __name__ == "__main__":
+    main()
