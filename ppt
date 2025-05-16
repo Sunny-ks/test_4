@@ -1,17 +1,9 @@
-GRPO Training Pipeline
+"Reinforcement Learning is like training a dog or teaching a child — you give rewards when they do the right thing, and they learn from that to do better next time."
 
-4 Main Steps:
-
-Generate Completions
-From various prompts using the current model (policy).
-
-Compute Rewards & Advantages
-Use a reward model (RM) to evaluate completions.
-Normalize scores to compute advantages (how good is each output relative to average).
-
-Estimate KL Divergence
-Compare current policy to reference policy (e.g., SFT checkpoint) to ensure stability.
-
-Compute Loss & Update Model
-Final objective = Advantage – KL penalty.
-Maximize good completions while avoiding harmful policy drift.
+✅ Core Concepts (In Plain English)
+RL Component	Explanation
+Agent	The learner or model you're training (e.g., your content moderation model)
+Environment	The world it interacts with (e.g., text inputs and prompts)
+Action	What the model decides to output (e.g., labeling a text as harmful or not)
+Reward	Feedback on how good the action was (e.g., +1 if correct harm label, -1 if wrong)
+Policy	The model’s internal decision-making strategy
