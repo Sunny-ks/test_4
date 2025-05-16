@@ -1,18 +1,17 @@
-Batch Type	Description
-🟦 SFT Batch	- Labeled prompt-response pairs
-- Only assistant response tokens used for loss (labels = response, others masked with -100)
-- Teaches model what to output for each prompt
-🟨 SSL Batch	- Unlabeled data (or synthetic completions)
-- Loss computed over all tokens (labels = input_ids)
-- Teaches model language modeling, prompt structures, and generation fluency
+GRPO Training Pipeline
 
-⚙️ How It Works
-Training alternates between SFT and SSL batches:
-Batch 1 (SFT) → Batch 2 (SSL) → Batch 3 (SFT) → ...
+4 Main Steps:
 
-Model learns task alignment (via SFT) and robust generalization (via SSL) simultaneously.
+Generate Completions
+From various prompts using the current model (policy).
 
-💡 Benefits
-Reduces overfitting to narrow prompts or labels
+Compute Rewards & Advantages
+Use a reward model (RM) to evaluate completions.
+Normalize scores to compute advantages (how good is each output relative to average).
 
-Enhances generalization across varied client-like prompt formats
+Estimate KL Divergence
+Compare current policy to reference policy (e.g., SFT checkpoint) to ensure stability.
+
+Compute Loss & Update Model
+Final objective = Advantage – KL penalty.
+Maximize good completions while avoiding harmful policy drift.
