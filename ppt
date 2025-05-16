@@ -1,0 +1,18 @@
+Batch Type	Description
+🟦 SFT Batch	- Labeled prompt-response pairs
+- Only assistant response tokens used for loss (labels = response, others masked with -100)
+- Teaches model what to output for each prompt
+🟨 SSL Batch	- Unlabeled data (or synthetic completions)
+- Loss computed over all tokens (labels = input_ids)
+- Teaches model language modeling, prompt structures, and generation fluency
+
+⚙️ How It Works
+Training alternates between SFT and SSL batches:
+Batch 1 (SFT) → Batch 2 (SSL) → Batch 3 (SFT) → ...
+
+Model learns task alignment (via SFT) and robust generalization (via SSL) simultaneously.
+
+💡 Benefits
+Reduces overfitting to narrow prompts or labels
+
+Enhances generalization across varied client-like prompt formats
